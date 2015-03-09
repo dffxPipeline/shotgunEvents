@@ -26,35 +26,41 @@ http://shotgunsoftware.github.com/shotgunEvents
 __version__ = '0.9'
 __version_info__ = (0, 9)
 
-import ConfigParser
-import datetime
-import imp
-import logging
-import logging.handlers
-import os
-import pprint
-import socket
-import sys
-import time
-import types
-import traceback
+path_to_shotgun='S:\software\python\shotgun\python-api-master'
 
-from distutils.version import StrictVersion
+try:
+    import imp
+    import sys
+    sys.path.insert(1,path_to_shotgun)
+    import shotgun_api3 as sg
+    import ConfigParser
+    import datetime
+    import logging
+    import logging.handlers
+    import os
+    import pprint
+    import socket
+    import time
+    import types
+    import traceback
+    import daemonizer
+    from distutils.version import StrictVersion
+except ImportError as error:
+    print error
+
+if sys.platform == 'win32':
+    try:
+        import win32serviceutil
+        import win32service
+        import win32event
+        import servicemanager
+    except ImportError as error:
+        print error
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-
-if sys.platform == 'win32':
-    import win32serviceutil
-    import win32service
-    import win32event
-    import servicemanager
-
-import daemonizer
-import shotgun_api3 as sg
-
 
 CURRENT_PYTHON_VERSION = StrictVersion(sys.version.split()[0])
 PYTHON_25 = StrictVersion('2.5')
@@ -77,6 +83,10 @@ Line: %(lineno)d
 
 %(message)s"""
 
+def getDate():
+    date = time.localtime()
+    date=time.strftime('%m%d%y',date)
+    return date
 
 def _setFilePathOnLogger(logger, path):
     # Remove any previous handler.
@@ -196,9 +206,10 @@ class Config(ConfigParser.ConfigParser):
         return 500
 
     def getLogFile(self, filename=None):
+        date=str(getDate())
         if filename is None:
             if self.has_option('daemon', 'logFile'):
-                filename = self.get('daemon', 'logFile')
+                filename = (self.get('daemon', 'logFile') + '_' + date)
             else:
                 raise ConfigError('The config file has no logFile option.')
 
@@ -425,7 +436,7 @@ class Engine(object):
             # Reload plugins
             for collection in self._pluginCollections:
                 collection.load()
-                
+
             # Make sure that newly loaded events have proper state.
             self._loadEventIdData()
 
@@ -450,7 +461,7 @@ class Engine(object):
             filters = [['id', 'greater_than', nextEventId - 1]]
             fields = ['id', 'event_type', 'attribute_name', 'meta', 'entity', 'user', 'project', 'session_uuid', 'created_at']
             order = [{'column':'id', 'direction':'asc'}]
-    
+
             conn_attempts = 0
             while True:
                 try:
@@ -607,12 +618,13 @@ class Plugin(object):
         self._backlog = {}
 
         # Setup the plugin's logger
-        self.logger = logging.getLogger('plugin.' + self.getName())
+        date=str(getDate())
+        self.logger = logging.getLogger(self.getName()+ '_' + date)
         self.logger.config = self._engine.config
         self._engine.setEmailsOnLogger(self.logger, True)
         self.logger.setLevel(self._engine.config.getLogLevel())
         if self._engine.config.getLogMode() == 1:
-            _setFilePathOnLogger(self.logger, self._engine.config.getLogFile('plugin.' + self.getName()))
+            _setFilePathOnLogger(self.logger, self._engine.config.getLogFile('shotgunEventDaemon_Plugin'+'_'+self.getName()+'_'+ date))
 
     def getName(self):
         return self._pluginName
@@ -788,7 +800,6 @@ class Plugin(object):
         @rtype: I{str}
         """
         return self.getName()
-
 
 class Registrar(object):
     """
@@ -1040,7 +1051,7 @@ if sys.platform == 'win32':
         """
         Windows service wrapper
         """
-        _svc_name_ = "ShotgunEventDaemon"
+        _svc_name_ = "shotgunDaemonHandler"
         _svc_display_name_ = "Shotgun Event Handler"
 
         def __init__(self, args):
@@ -1104,28 +1115,31 @@ class LinuxDaemon(daemonizer.Daemon):
 def main():
     """
     """
-    action = None
-    if len(sys.argv) > 1:
-        action = sys.argv[1]
+    try:
+        action = None
+        if len(sys.argv) > 1:
+            action = sys.argv[1]
 
-    if sys.platform == 'win32' and action != 'foreground':
-        win32serviceutil.HandleCommandLine(WindowsService)
-        return 0
-
-    if action:
-        daemon = LinuxDaemon()
-
-        # Find the function to call on the daemon and call it
-        func = getattr(daemon, action, None)
-        if action[:1] != '_' and func is not None:
-            func()
+        if sys.platform == 'win32' and action != 'foreground':
+            win32serviceutil.HandleCommandLine(WindowsService)
             return 0
 
-        print "Unknown command: %s" % action
+        if action:
+            daemon = LinuxDaemon()
 
-    print "usage: %s start|stop|restart|foreground" % sys.argv[0]
-    return 2
+            # Find the function to call on the daemon and call it
+            func = getattr(daemon, action, None)
+            if action[:1] != '_' and func is not None:
+                func()
+                return 0
 
+            print "Unknown command: %s" % action
+
+        print "usage: %s start|stop|restart|foreground" % sys.argv[0]
+        return 2
+    except Exception as error:
+        print error
+        time.sleep(100)
 
 def _getConfigPath():
     """
@@ -1151,7 +1165,6 @@ def _getConfigPath():
 
     # No config file was found
     raise EventDaemonError('Config path not found, searched %s' % ', '.join(paths))
-
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -1,3 +1,5 @@
 docs/_build/doctrees
 shotgunEventDaemon.conf
 *.pyc
+*.conf
+dffx_shotgun_process_logging/

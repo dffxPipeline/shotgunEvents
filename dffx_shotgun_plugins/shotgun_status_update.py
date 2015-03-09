@@ -30,16 +30,17 @@ def registerCallbacks(reg):
     #   appropriate
     #
     #eventFilter = {'Shotgun_Task_Change': ['sg_status_list']}
-    eventFilter = None
-    reg.registerCallback('$DEMO_SCRIPT_NAME$', '$DEMO_API_KEY$', logArgs, eventFilter, None)
+    matchEvents = {
+        'Shotgun_Version_Change': ['sg_status_list']
+    }
+    reg.registerCallback('shotgunEventDaemon', '20e144217457a633c35fef9635ccb32c1a134d9f12060a0b496ec19f3095b603', shotgun_status_update, matchEvents, None)
 
     # Set the logging level for this particular plugin. Let error and above
     # messages through but block info and lower. This is particularly usefull
     # for enabling and disabling debugging on a per plugin basis.
-    reg.logger.setLevel(logging.ERROR)
+    reg.logger.setLevel(logging.INFO)
 
-
-def logArgs(sg, logger, event, args):
+def shotgun_status_update(sg, logger, event, args):
     """
     A callback that logs its arguments.
 
@@ -48,4 +49,27 @@ def logArgs(sg, logger, event, args):
     @param event: A Shotgun event.
     @param args: The args passed in at the registerCallback call.
     """
-    logger.info("%s" % str(event))
+    if 'new_value' not in event['meta']:
+        return
+    else:
+        statusUpdate = event['meta']['new_value']
+        if statusUpdate != 'vwd' and statusUpdate != 'na':
+            versionID=event['entity']['id']
+            entityType=event['entity']['type']
+            filters=[['id','is',versionID]]
+            fields=['sg_task']
+
+            versionTask=sg.find_one("Version",filters,fields)
+
+            logger.info("%s" % str(versionTask))
+        else:
+            return
+
+
+    #filters=['id','is',event['entity']['id']]
+    #fields=['sg_task']
+
+    #for item in sg.find("Version",filters,fields):
+        #logger.info("%s" % str(item))
+
+    #logger.info("%s" % str(versionFind))
