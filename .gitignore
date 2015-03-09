@@ -3,3 +3,5 @@ shotgunEventDaemon.conf
 *.pyc
 *.conf
 dffx_shotgun_process_logging/
+dffx_shotgun_logging/
+dffx_shotgun_event_logging/
