@@ -1,0 +1,5 @@
+TS = task status
+SS = shot status
+DSD = downstream dependency
+T = task
+V = version

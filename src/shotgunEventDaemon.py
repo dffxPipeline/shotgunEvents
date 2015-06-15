@@ -23,21 +23,36 @@ folder or an html compiled version at:
 http://shotgunsoftware.github.com/shotgunEvents
 """
 
+
+rootSoftwareDir = ['Z:\\Server\\Tools','S:\\',]
+shotgunPathExists = ''
+
+import os
+
+def getPath(paths):
+    for path in paths:
+        if os.path.exists(path):
+            return path
+
 __version__ = '0.9'
 __version_info__ = (0, 9)
 
-path_to_shotgun='S:\software\python\shotgun\python-api-master'
-
+for dir in rootSoftwareDir:
+    path_to_shotgun=[os.path.join(dir,'software\\python\\shotgun\\python-api-master')]
+    path_to_shotgun = getPath(path_to_shotgun)
+    if path_to_shotgun != None:
+        shotgunPathExists = path_to_shotgun
 try:
+
     import imp
     import sys
-    sys.path.insert(1,path_to_shotgun)
-    import shotgun_api3 as sg
+    if shotgunPathExists != '':
+        sys.path.insert(1,shotgunPathExists)
+        import shotgun_api3 as sg
     import ConfigParser
     import datetime
     import logging
     import logging.handlers
-    import os
     import pprint
     import socket
     import time
@@ -47,6 +62,8 @@ try:
     from distutils.version import StrictVersion
 except ImportError as error:
     print error
+    import time
+    time.sleep(300)
 
 if sys.platform == 'win32':
     try:
@@ -56,7 +73,8 @@ if sys.platform == 'win32':
         import servicemanager
     except ImportError as error:
         print error
-
+        import time
+        time.sleep(300)
 try:
     import cPickle as pickle
 except ImportError:
@@ -85,7 +103,7 @@ Line: %(lineno)d
 
 def getDate():
     date = time.localtime()
-    date=time.strftime('%m%d%y',date)
+    date = time.strftime('%m%d%y',date)
     return date
 
 def _setFilePathOnLogger(logger, path):
@@ -113,7 +131,6 @@ def _removeHandlersFromLogger(logger, handlerTypes=None):
     for handler in logger.handlers:
         if handlerTypes is None or isinstance(handler, handlerTypes):
             logger.removeHandler(handler)
-
 
 def _addMailHandlerToLogger(logger, smtpServer, fromAddr, toAddrs, emailSubject, username=None, password=None, secure=None):
     """
@@ -227,7 +244,6 @@ class Config(ConfigParser.ConfigParser):
             path = filename
 
         return path
-
 
 class Engine(object):
     """
@@ -604,6 +620,7 @@ class Plugin(object):
 
         @raise ValueError: If the path to the plugin is not a valid file.
         """
+        self.date = None
         self._engine = engine
         self._path = path
 
@@ -618,13 +635,13 @@ class Plugin(object):
         self._backlog = {}
 
         # Setup the plugin's logger
-        date=str(getDate())
-        self.logger = logging.getLogger(self.getName()+ '_' + date)
+        self.date=str(getDate())
+        self.logger = logging.getLogger(self.getName()+ '_' + self.date)
         self.logger.config = self._engine.config
         self._engine.setEmailsOnLogger(self.logger, True)
         self.logger.setLevel(self._engine.config.getLogLevel())
         if self._engine.config.getLogMode() == 1:
-            _setFilePathOnLogger(self.logger, self._engine.config.getLogFile('shotgunEventDaemon_Plugin'+'_'+self.getName()+'_'+ date))
+            _setFilePathOnLogger(self.logger, self._engine.config.getLogFile('shotgunEventDaemon_Plugin'+'_'+self.getName()+'_'+ self.date))
 
     def getName(self):
         return self._pluginName
@@ -715,14 +732,18 @@ class Plugin(object):
             return
 
         regFunc = getattr(plugin, 'registerCallbacks', None)
+
         if callable(regFunc):
             try:
                 regFunc(Registrar(self))
             except:
                 self._engine.log.critical('Error running register callback function from plugin at %s.\n\n%s', self._path, traceback.format_exc())
+                self.logger.error('Error running register callback function from plugin at %s.\n\n%s', self._path, traceback.format_exc())
                 self._active = False
         else:
             self._engine.log.critical('Did not find a registerCallbacks function in plugin at %s.', self._path)
+            self.logger.error('Did not find a registerCallbacks function in plugin at %s.', self._path)
+
             self._active = False
 
     def registerCallback(self, sgScriptName, sgScriptKey, callback, matchEvents=None, args=None, stopOnError=True):
@@ -1145,11 +1166,20 @@ def _getConfigPath():
     """
     Get the path of the shotgunEventDaemon configuration file.
     """
-    paths = ['/etc', os.path.dirname(__file__)]
+    shotgunEventDaemonPathExists = ''
+    configsPathExists = ''
+
+    for dir in rootSoftwareDir:
+        configsPath = [os.path.join( dir, 'configs\\shotgun' )]
+        configsPath = getPath(configsPath)
+        if configsPath != None:
+            configsPathExists = configsPath
+
+    paths = ['/etc', os.path.dirname(__file__), configsPathExists]
 
     # Get the current path of the daemon script
     scriptPath = sys.argv[0]
-    if scriptPath != '' and scriptPath != '-c':
+    if scriptPath != '' and scriptPath != '-c' and scriptPath != None:
         # Make absolute path and eliminate any symlinks if any.
         scriptPath = os.path.abspath(scriptPath)
         scriptPath = os.path.realpath(scriptPath)
@@ -1158,13 +1188,18 @@ def _getConfigPath():
         paths[:0] = [os.path.dirname(scriptPath)]
 
     # Search for a config file.
-    for path in paths:
-        path = os.path.join(path, 'shotgunEventDaemon.conf')
-        if os.path.exists(path):
-            return path
 
-    # No config file was found
-    raise EventDaemonError('Config path not found, searched %s' % ', '.join(paths))
+    for path in paths:
+        shotgunEventDaemonPath = [os.path.join(path, 'shotgunEventDaemon.conf')]
+        shotgunEventDaemonPath = getPath(shotgunEventDaemonPath)
+        if shotgunEventDaemonPath != None:
+            shotgunEventDaemonPathExists = shotgunEventDaemonPath
+
+    if shotgunEventDaemonPathExists != '':
+        return shotgunEventDaemonPath
+    else:
+        # No config file was found
+        raise EventDaemonError('Config path not found, searched %s' % ', '.join(paths))
 
 if __name__ == '__main__':
     sys.exit(main())
