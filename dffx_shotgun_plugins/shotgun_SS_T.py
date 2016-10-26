@@ -59,6 +59,8 @@ def changeStatus(sg,shotID,status):
         status_out = 'Shot Omitted'
     if status == 'ip':
         status_out = 'Shot Marked In Progress'
+    if status == 'rnd':
+        status_out = 'Shot is Rendering'
     return ( "Shot ID %s: Status Updated to %s" % ( str(shotID),str(status_out) ) )
 
 def parseConfig():
@@ -138,10 +140,15 @@ def shotgun_SS_T(sg, logger, event, args):
 
         else:
             currentTaskID = event['entity']['id']
+            logger.info("%s" % str(currentTaskID))
             currentTaskFilters = [['id','is',currentTaskID]]
+            logger.info("%s" % str(currentTaskFilters))
+
             currentTaskFields = ['sg_status_list']
+            logger.info("%s" % str(currentTaskFilters))
             currentTaskStatus = sg_find(sg,'Task',currentTaskFilters,currentTaskFields)['sg_status_list']
-            shotStatusUpdateData,revCount,modCount,ipCount,pcrCount,hldCount,internalFinalCount,disregardCount = ('' for i in range(8))
+            logger.info("%s" % str(currentTaskStatus))
+            shotStatusUpdateData,revCount,modCount,ipCount,pcrCount,hldCount,internalFinalCount,disregardCount = ( '' for i in range(8) )
             filters=[['id','is',currentTaskID]]
             fields=['entity']
             try:
@@ -157,12 +164,15 @@ def shotgun_SS_T(sg, logger, event, args):
                     taskStatus = sg_find(sg,'Task',taskFilters,taskFields)['sg_status_list']
                     shotTaskStatusList.append(taskStatus)
 
-                disregardCount = shotTaskStatusList.count('omt') + shotTaskStatusList.count('wtg') + shotTaskStatusList.count('na')
+                ipStatusList = ['ip', 'rdy', 'wtg', 'lgt', 'lgtCmp']
+
+                disregardCount = shotTaskStatusList.count('omt') + shotTaskStatusList.count('na')
                 internalFinalCount = shotTaskStatusList.count('if') + shotTaskStatusList.count('fin') + shotTaskStatusList.count('CBB') + disregardCount
                 hldCount = shotTaskStatusList.count('hld') + internalFinalCount
                 pcrCount = shotTaskStatusList.count('pcr') + hldCount
-                ipCount =  shotTaskStatusList.count('rdy') + pcrCount
-                modCount = shotTaskStatusList.count('mn') + ipCount
+                ipCount =  shotTaskStatusList.count('ip') + shotTaskStatusList.count('wtg') + shotTaskStatusList.count('rdy') + shotTaskStatusList.count('lgtcmp') + shotTaskStatusList.count('lgt') + pcrCount
+                rndCount = shotTaskStatusList.count('rnd') + ipCount
+                modCount = shotTaskStatusList.count('mn') + rndCount
                 revCount = shotTaskStatusList.count('rev') + modCount
 
                 logger.info("%s" % str(shotTaskStatusList))
@@ -180,7 +190,18 @@ def shotgun_SS_T(sg, logger, event, args):
                         statusInfo = changeStatus(sg,shotID,'rev')
                         logger.info("%s" % str(statusInfo))
 
-                elif 'ip' == currentTaskStatus or 'rdy' == currentTaskStatus:
+                elif 'rnd' == currentTaskStatus:
+                    if rndCount == len(shotTaskStatusList):
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'rev' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rev')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'mn' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'mn')
+                        logger.info("%s" % str(statusInfo))
+
+                elif currentTaskStatus in ipStatusList:
                     if ipCount == len(shotTaskStatusList):
                         statusInfo = changeStatus(sg,shotID,'ip')
                         logger.info("%s" % str(statusInfo))
@@ -189,6 +210,9 @@ def shotgun_SS_T(sg, logger, event, args):
                         logger.info("%s" % str(statusInfo))
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
                         logger.info("%s" % str(statusInfo))
 
                 elif 'pcr' == currentTaskStatus:
@@ -201,7 +225,10 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
                         logger.info("%s" % str(statusInfo))
-                    elif 'ip' in shotTaskStatusList or 'rdy' in shotTaskStatusList:
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif bool( set(ipStatusList) & set(shotTaskStatusList) ):
                         statusInfo = changeStatus(sg,shotID,'ip')
                         logger.info("%s" % str(statusInfo))
 
@@ -215,7 +242,10 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
                         logger.info("%s" % str(statusInfo))
-                    elif 'ip' in shotTaskStatusList or 'rdy' in shotTaskStatusList:
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif bool( set(ipStatusList) & set(shotTaskStatusList) ):
                         statusInfo = changeStatus(sg,shotID,'ip')
                         logger.info("%s" % str(statusInfo))
                     elif 'pcr' in shotTaskStatusList:
@@ -235,7 +265,10 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
                         logger.info("%s" % str(statusInfo))
-                    elif 'ip' in shotTaskStatusList or 'rdy' in shotTaskStatusList:
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif bool( set(ipStatusList) & set(shotTaskStatusList) ):
                         statusInfo = changeStatus(sg,shotID,'ip')
                         logger.info("%s" % str(statusInfo))
                     elif 'pcr' in shotTaskStatusList:
@@ -255,7 +288,10 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
                         logger.info("%s" % str(statusInfo))
-                    elif 'ip' in shotTaskStatusList or 'rdy' in shotTaskStatusList:
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif bool( set(ipStatusList) & set(shotTaskStatusList) ):
                         statusInfo = changeStatus(sg,shotID,'ip')
                         logger.info("%s" % str(statusInfo))
                     elif 'pcr' in shotTaskStatusList:
@@ -278,7 +314,39 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
                         logger.info("%s" % str(statusInfo))
-                    elif 'ip' in shotTaskStatusList or 'rdy' in shotTaskStatusList:
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif bool( set(ipStatusList) & set(shotTaskStatusList) ):
+                        statusInfo = changeStatus(sg,shotID,'ip')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'pcr' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'pcr')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'if' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'if')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'fin' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'fin')
+                        logger.info("%s" % str(statusInfo))
+
+                elif 'wtg' == currentTaskStatus:
+                    if all_same( shotTaskStatusList ) == True:
+                        statusInfo = changeStatus(sg,shotID,'omt')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'hld' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'hld')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'rev' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rev')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'mn' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'mn')
+                        logger.info("%s" % str(statusInfo))
+                    elif 'rnd' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'rnd')
+                        logger.info("%s" % str(statusInfo))
+                    elif bool( set(ipStatusList) & set(shotTaskStatusList) ):
                         statusInfo = changeStatus(sg,shotID,'ip')
                         logger.info("%s" % str(statusInfo))
                     elif 'pcr' in shotTaskStatusList:

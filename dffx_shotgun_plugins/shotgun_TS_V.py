@@ -109,6 +109,10 @@ def shotgun_TS_V(sg, logger, event, args):
         return
 
     else:
+        versionTaskID = ''
+        TaskStatusUpdate = ''
+        versionID = ''
+        lastVersionID = ''
         try:
             TaskStatusUpdate = event['meta']['new_value']
             ignoredStatusUpdates = ['vwd','wtg','na']
@@ -146,18 +150,22 @@ def shotgun_TS_V(sg, logger, event, args):
                 if len(versionSummary) >= 2:
                     latestVersionID = int(versionSummary[0]['group_name'])
                     lastVersionID = int(versionSummary[1]['group_name'])
+                    lastVersionStatusFilters = [['id','is',lastVersionID]]
+                    lastVersionStatusFields = ['sg_status_list']
 
                     if latestVersionID == versionID:
-                        # Version Name Based finding, for readability, but not the most exact (two versions can be named the same thing if user makes an error)
-                        #         latestVersionID = sg.find('Version',filters = [['code', 'is', latestVersion],['project', 'is', versionProject]],fields = ['id'])[0]['id']
-                        #         lastVersionID = sg.find('Version',filters = [['code', 'is', lastVersion],['project', 'is', versionProject]],fields = ['id'])[0]['id']
-                        #         logger.info("%s" % (latestVersionID))
-                        #         logger.info("%s" % (lastVersionID))
-                        #
-                        statusUpdate = 'vwd'
-                        statusUpdateData = {'sg_status_list':str(statusUpdate)}
-                        versionStatusUpdate = sg.update ("Version",lastVersionID,statusUpdateData)
-                        logger.info("Version Status Updated To %s for Version ID %s Based on Version ID %s" % (str(statusUpdate),str(lastVersionID),str(latestVersionID)))
+                        lastVersionStatus = sg_find(sg,'Task',lastVersionStatusFilters,lastVersionStatusFields)['sg_status_list']
+                        if lastVersionStatus != 'apr':
+                            # Version Name Based finding, for readability, but not the most exact (two versions can be named the same thing if user makes an error)
+                            #         latestVersionID = sg.find('Version',filters = [['code', 'is', latestVersion],['project', 'is', versionProject]],fields = ['id'])[0]['id']
+                            #         lastVersionID = sg.find('Version',filters = [['code', 'is', lastVersion],['project', 'is', versionProject]],fields = ['id'])[0]['id']
+                            #         logger.info("%s" % (latestVersionID))
+                            #         logger.info("%s" % (lastVersionID))
+                            #
+                            statusUpdate = 'vwd'
+                            statusUpdateData = {'sg_status_list':str(statusUpdate)}
+                            versionStatusUpdate = sg.update ("Version",lastVersionID,statusUpdateData)
+                            logger.info("Version Status Updated To %s for Version ID %s Based on Version ID %s" % (str(statusUpdate),str(lastVersionID),str(latestVersionID)))
 
         except Exception as error:
             logger.info("Can't Update Status For %s Version ID: %s" % (str(lastVersionID),str(error)))
