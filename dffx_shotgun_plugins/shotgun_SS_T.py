@@ -41,27 +41,29 @@ def all_same(items):
 
 def changeStatus(sg,shotID,status):
     status_out = ''
-    shotStatusUpdateData = {'sg_status_list':str(status)}
-    taskUpdate = sg.update ( "Shot",shotID,shotStatusUpdateData )
-    if status == 'hld':
-        status_out = 'Shot On Hold'
-    if status == 'rev':
-        status_out = 'Pending Review'
-    if status == 'mn':
-        status_out = 'Mod Needed'
-    if status == 'pcr':
-        status_out = 'Pending Client Review'
-    if status =='if':
-        status_out = 'Shot Marked Internal Final'
-    if status =='fin':
-        status_out = 'Shot Marked Final'
-    if status == 'omt':
-        status_out = 'Shot Omitted'
-    if status == 'ip':
-        status_out = 'Shot Marked In Progress'
-    if status == 'rnd':
-        status_out = 'Shot is Rendering'
-    return ( "Shot ID %s: Status Updated to %s" % ( str(shotID),str(status_out) ) )
+    if status:
+        shotStatusUpdateData = {'sg_status_list':str(status)}
+        if shotStatusUpdateData:
+            taskUpdate = sg.update ( "Shot", shotID, shotStatusUpdateData )
+        if status == 'hld':
+            status_out = 'Shot On Hold'
+        if status == 'rev':
+            status_out = 'Pending Review'
+        if status == 'mn':
+            status_out = 'Mod Needed'
+        if status == 'pcr':
+            status_out = 'Pending Client Review'
+        if status =='if':
+            status_out = 'Shot Marked Internal Final'
+        if status =='fin':
+            status_out = 'Shot Marked Final'
+        if status == 'omt':
+            status_out = 'Shot Omitted'
+        if status == 'ip':
+            status_out = 'Shot Marked In Progress'
+        if status == 'rnd':
+            status_out = 'Shot is Rendering'
+        return ( "Shot ID %s: Status Updated to %s" % ( str(shotID),str(status_out) ) )
 
 def parseConfig():
 

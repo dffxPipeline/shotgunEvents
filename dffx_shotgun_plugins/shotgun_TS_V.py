@@ -80,7 +80,7 @@ def registerCallbacks(reg):
     # - A filter to match events to so the callable is only invoked when
     #   appropriate
     #
-    reg.logger.debug('Loading shotgun_SS_T plugin.')
+    reg.logger.debug('Loading shotgun_TS_V plugin.')
 
     configInfo = parseConfig()
     shotgunScriptName = configInfo[0]
@@ -105,67 +105,65 @@ def shotgun_TS_V(sg, logger, event, args):
     @param event: A Shotgun event.
     @param args: The args passed in at the registerCallback call.
     """
-    if 'new_value' not in event['meta']:
-        return
-
-    else:
-        versionTaskID = ''
-        TaskStatusUpdate = ''
-        versionID = ''
-        lastVersionID = ''
-        try:
-            TaskStatusUpdate = event['meta']['new_value']
-            ignoredStatusUpdates = ['vwd','wtg','na']
-            if TaskStatusUpdate not in ignoredStatusUpdates:
+    if event:
+        if 'new_value' not in event['meta']:
+            return
+        else:
+            versionTaskID = ''
+            TaskStatusUpdate = ''
+            versionID = ''
+            lastVersionID = ''
+            try:
+                TaskStatusUpdate = event['meta']['new_value']
+                ignoredStatusUpdates = ['vwd','wtg','na']
+                if TaskStatusUpdate not in ignoredStatusUpdates:
+                    versionID = event['entity']['id']
+                    entityType = event['entity']['type']
+                    filters = [['id','is',versionID]]
+                    fields = ['sg_task']
+                    versionTaskID = sg_find(sg,'Version',filters,fields)['sg_task'].get('id')
+                    TaskStatusUpdateData = {'sg_status_list':TaskStatusUpdate}
+                    taskUpdate = sg.update ("Task",versionTaskID,TaskStatusUpdateData)
+                    logger.info("Task Status Updated To %s for Task ID %s Based on Version ID %s" % (str(TaskStatusUpdate),str(versionTaskID),str(versionID)))
+            except Exception as error:
+                logger.info("Can't Update Task Status For %s Task ID: %s " % (str(versionTaskID),str(error)))
+            try:
+                versionSummary = []
                 versionID = event['entity']['id']
-                entityType = event['entity']['type']
                 filters = [['id','is',versionID]]
-                fields = ['sg_task']
-                versionTaskID = sg_find(sg,'Version',filters,fields)['sg_task'].get('id')
-                TaskStatusUpdateData = {'sg_status_list':TaskStatusUpdate}
-                taskUpdate = sg.update ("Task",versionTaskID,TaskStatusUpdateData)
+                fields = ['entity','sg_task','project']
+                versionDict = sg.find_one('Version', filters, fields)
+                versionEntity = versionDict['entity']
+                versionTask = versionDict['sg_task']
+                versionProject = versionDict['project']
+                #logger.info(str(versionEntity))
+                #logger.info(str(versionTask))
+                #logger.info(str(versionProject))
+                if versionEntity != None and versionTask != None and versionProject != None:
+                    versionSummary = sg.summarize( entity_type = 'Version', filters = [['entity', 'is', versionEntity],['sg_task', 'is', versionTask],['project', 'is', versionProject]],
+                                                    summary_fields=[{'field':'created_at','type':'latest'}],
+                                                    grouping=[{'field':'id','type':'exact','direction':'desc'}])['groups']
+                    if versionSummary != []:
+                        if len(versionSummary) >= 2:
+                            latestVersionID = int(versionSummary[0]['group_name'])
+                            lastVersionID = int(versionSummary[1]['group_name'])
+                            lastVersionStatusFilters = [['id', 'is', lastVersionID]]
+                            lastVersionStatusFields = ['sg_status_list']
 
-                logger.info("Task Status Updated To %s for Task ID %s Based on Version ID %s" % (str(TaskStatusUpdate),str(versionTaskID),str(versionID)))
+                            # logger.info(str(versionSummary))
+                            # logger.info(str(latestVersionID))
+                            # logger.info(str(lastVersionID))
 
-            else:
-                return
-        except Exception as error:
-            logger.info("Can't Update Task Status For %s Task ID: %s " % (str(versionTaskID),str(error)))
-        try:
-            versionSummary = []
-            versionID = event['entity']['id']
-            filters = [['id','is',versionID]]
-            fields = ['entity','sg_task','project']
-            versionDict = sg_entityDict=sg.find_one('Version',filters,fields)
+                        if latestVersionID == versionID:
+                            lastVersionStatus_dict = sg_find(sg,'Version', lastVersionStatusFilters, lastVersionStatusFields)
+                            if 'sg_status_list' in lastVersionStatus_dict.keys():
+                                lastVersionStatus = lastVersionStatus_dict['sg_status_list']
+                            #logger.info(str(lastVersionStatus))
+                            if lastVersionStatus != 'apr' and lastVersionStatus != None:
+                                statusUpdate = 'vwd'
+                                statusUpdateData = {'sg_status_list':str(statusUpdate)}
+                                versionStatusUpdate = sg.update ("Version", lastVersionID, statusUpdateData)
+                                logger.info("Version Status Updated To %s for Version ID %s Based on Version ID %s" % (str(statusUpdate), str(lastVersionID), str(latestVersionID)))
 
-            versionEntity = versionDict['entity']
-            versionTask = versionDict['sg_task']
-            versionProject = versionDict['project']
-
-            versionSummary = sg.summarize( entity_type = 'Version', filters = [['entity', 'is', versionEntity],['sg_task', 'is', versionTask],['project', 'is', versionProject]],
-                                            summary_fields=[{'field':'created_at','type':'latest'}],
-                                            grouping=[{'field':'id','type':'exact','direction':'desc'}])['groups']
-
-            if versionSummary != []:
-                if len(versionSummary) >= 2:
-                    latestVersionID = int(versionSummary[0]['group_name'])
-                    lastVersionID = int(versionSummary[1]['group_name'])
-                    lastVersionStatusFilters = [['id','is',lastVersionID]]
-                    lastVersionStatusFields = ['sg_status_list']
-
-                    if latestVersionID == versionID:
-                        lastVersionStatus = sg_find(sg,'Task',lastVersionStatusFilters,lastVersionStatusFields)['sg_status_list']
-                        if lastVersionStatus != 'apr':
-                            # Version Name Based finding, for readability, but not the most exact (two versions can be named the same thing if user makes an error)
-                            #         latestVersionID = sg.find('Version',filters = [['code', 'is', latestVersion],['project', 'is', versionProject]],fields = ['id'])[0]['id']
-                            #         lastVersionID = sg.find('Version',filters = [['code', 'is', lastVersion],['project', 'is', versionProject]],fields = ['id'])[0]['id']
-                            #         logger.info("%s" % (latestVersionID))
-                            #         logger.info("%s" % (lastVersionID))
-                            #
-                            statusUpdate = 'vwd'
-                            statusUpdateData = {'sg_status_list':str(statusUpdate)}
-                            versionStatusUpdate = sg.update ("Version",lastVersionID,statusUpdateData)
-                            logger.info("Version Status Updated To %s for Version ID %s Based on Version ID %s" % (str(statusUpdate),str(lastVersionID),str(latestVersionID)))
-
-        except Exception as error:
-            logger.info("Can't Update Status For %s Version ID: %s" % (str(lastVersionID),str(error)))
+            except Exception as error:
+                logger.info("Can't Update Status For %s Version ID: %s" % (str(lastVersionID), str(error)))
