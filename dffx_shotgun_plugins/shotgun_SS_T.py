@@ -6,7 +6,7 @@ http://shotgunsoftware.github.com/shotgunEvents/api.html
 ## shotgun_logArgs: Logs all events that occur and generates a logfile in the specified directory found in the shotgun_logging.conf file ##
 """
 
-rootSoftwareDir = ['Z:\\Server\\Tools','S:\\',]
+rootSoftwareDir = ['Z:\\Server\\Tools','S:\\']
 dffxModulesExists = ''
 configFilePathExists = ''
 
@@ -142,14 +142,13 @@ def shotgun_SS_T(sg, logger, event, args):
 
         else:
             currentTaskID = event['entity']['id']
-            logger.info("%s" % str(currentTaskID))
+            #logger.info("%s" % str(currentTaskID))
             currentTaskFilters = [['id','is',currentTaskID]]
-            logger.info("%s" % str(currentTaskFilters))
-
+            #logger.info("%s" % str(currentTaskFilters))
             currentTaskFields = ['sg_status_list']
-            logger.info("%s" % str(currentTaskFilters))
+            #logger.info("%s" % str(currentTaskFilters))
             currentTaskStatus = sg_find(sg,'Task',currentTaskFilters,currentTaskFields)['sg_status_list']
-            logger.info("%s" % str(currentTaskStatus))
+            #logger.info("%s" % str(currentTaskStatus))
             shotStatusUpdateData,revCount,modCount,ipCount,pcrCount,hldCount,internalFinalCount,disregardCount = ( '' for i in range(8) )
             filters=[['id','is',currentTaskID]]
             fields=['entity']
@@ -177,7 +176,7 @@ def shotgun_SS_T(sg, logger, event, args):
                 modCount = shotTaskStatusList.count('mn') + rndCount
                 revCount = shotTaskStatusList.count('rev') + modCount
 
-                logger.info("%s" % str(shotTaskStatusList))
+                #logger.info("%s" % str(shotTaskStatusList))
 
                 if 'rev' == currentTaskStatus:
                     if revCount == len(shotTaskStatusList):
@@ -360,7 +359,6 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'fin' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'fin')
                         logger.info("%s" % str(statusInfo))
-
                 else:
                     logger.info( "Shot ID %s: Status Not Updated" % ( str(shotID) ) )
             except Exception as error:

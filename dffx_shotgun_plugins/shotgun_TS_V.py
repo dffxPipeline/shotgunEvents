@@ -6,7 +6,7 @@ http://shotgunsoftware.github.com/shotgunEvents/api.html
 ## shotgun_logArgs: Logs all events that occur and generates a logfile in the specified directory found in the shotgun_logging.conf file ##
 """
 
-rootSoftwareDir = ['Z:\\Server\\Tools','S:\\',]
+rootSoftwareDir = ['Z:\\Server\\Tools','S:\\']
 dffxModulesExists = ''
 configFilePathExists = ''
 
