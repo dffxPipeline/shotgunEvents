@@ -154,16 +154,16 @@ def shotgun_TS_V(sg, logger, event, args):
                             # logger.info(str(latestVersionID))
                             # logger.info(str(lastVersionID))
 
-                        if latestVersionID == versionID:
-                            lastVersionStatus_dict = sg_find(sg,'Version', lastVersionStatusFilters, lastVersionStatusFields)
-                            if 'sg_status_list' in lastVersionStatus_dict.keys():
-                                lastVersionStatus = lastVersionStatus_dict['sg_status_list']
-                            #logger.info(str(lastVersionStatus))
-                            if lastVersionStatus != 'apr' and lastVersionStatus != None:
-                                statusUpdate = 'vwd'
-                                statusUpdateData = {'sg_status_list':str(statusUpdate)}
-                                versionStatusUpdate = sg.update ("Version", lastVersionID, statusUpdateData)
-                                logger.info("Version Status Updated To %s for Version ID %s Based on Version ID %s" % (str(statusUpdate), str(lastVersionID), str(latestVersionID)))
+                            if latestVersionID == versionID:
+                                lastVersionStatus_dict = sg_find(sg,'Version', lastVersionStatusFilters, lastVersionStatusFields)
+                                if 'sg_status_list' in lastVersionStatus_dict.keys():
+                                    lastVersionStatus = lastVersionStatus_dict['sg_status_list']
+                                    #logger.info(str(lastVersionStatus))
+                                    if lastVersionStatus != 'apr' and lastVersionStatus != None:
+                                        statusUpdate = 'vwd'
+                                        statusUpdateData = {'sg_status_list':str(statusUpdate)}
+                                        versionStatusUpdate = sg.update ("Version", lastVersionID, statusUpdateData)
+                                        logger.info("Version Status Updated To %s for Version ID %s Based on Version ID %s" % (str(statusUpdate), str(lastVersionID), str(latestVersionID)))
 
             except Exception as error:
                 logger.info("Can't Update Status For %s Version ID: %s" % (str(lastVersionID), str(error)))
