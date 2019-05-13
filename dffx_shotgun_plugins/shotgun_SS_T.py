@@ -63,6 +63,8 @@ def changeStatus(sg,shotID,status):
             status_out = 'Shot Marked In Progress'
         if status == 'rnd':
             status_out = 'Shot is Rendering'
+        if status == '4k':
+            status_out = 'Shot is Pending Quality Check'
         return ( "Shot ID %s: Status Updated to %s" % ( str(shotID),str(status_out) ) )
 
 def parseConfig():
@@ -201,6 +203,10 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'mn' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'mn')
                         logger.info("%s" % str(statusInfo))
+
+                elif '4k' == currentTaskStatus:
+                    statusInfo = changeStatus(sg, shotID, '4k')
+                    logger.info("%s" % str(statusInfo))
 
                 elif currentTaskStatus in ipStatusList:
                     if ipCount == len(shotTaskStatusList):
