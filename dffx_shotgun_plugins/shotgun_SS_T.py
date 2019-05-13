@@ -301,6 +301,9 @@ def shotgun_SS_T(sg, logger, event, args):
                     elif 'if' in shotTaskStatusList:
                         statusInfo = changeStatus(sg,shotID,'if')
                         logger.info("%s" % str(statusInfo))
+                    elif 'omt' in shotTaskStatusList:
+                        statusInfo = changeStatus(sg,shotID,'fin')
+                        logger.info("%s" % str(statusInfo))
 
                 elif 'omt' == currentTaskStatus:
                     if all_same( shotTaskStatusList ) == True:
