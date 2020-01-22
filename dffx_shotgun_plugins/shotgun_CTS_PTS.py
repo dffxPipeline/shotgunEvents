@@ -157,5 +157,21 @@ def shotgun_CTS_PTS(sg, logger, event, args):
                     else:
                         parent_status_out = "ip"
 
+                    valid_fin_status_list = set(["fin", "omt"])
+                    if "fin" in child_task_status_list:
+                        if valid_fin_status_list >= set(child_task_status_list):
+                            parent_status_out = "fin"
+                        if all_same( child_task_status_list ) == True:
+                            parent_status_out = "fin"
+                    valid_fin_status_list = set(["if", "omt"])
+                    if "if" in child_task_status_list:
+                        if valid_fin_status_list >= set(child_task_status_list):
+                            parent_status_out = "if"
+                        if all_same( child_task_status_list ) == True:
+                            parent_status_out = "if"
+                    if "omt" in child_task_status_list:
+                        if all_same( child_task_status_list ) == True:
+                            parent_status_out = "omt"
+
                     if parent_status_out != None:
                         sg.update ("Task", parent_task_id, {'sg_status_list':str(parent_status_out)})
