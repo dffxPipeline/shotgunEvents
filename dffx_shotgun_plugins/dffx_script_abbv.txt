@@ -3,3 +3,5 @@ SS = shot status
 DSD = downstream dependency
 T = task
 V = version
+CTS = Child Task Status
+PTS = Parent Task Status
