@@ -115,63 +115,66 @@ def shotgun_CTS_PTS(sg, logger, event, args):
             valid_spawned_task_dict_list = []
             child_task_status_list = []
             TaskStatusUpdate = event['meta']['new_value']
-            TaskID = event['entity']['id']
-            event_task_filters = [['id', 'is', TaskID]]
-            event_task_fields = ["sg_parent_task", "entity", "project"]
-            parent_status_out = None
+            event_entity = event.get('entity', None)
+            if event_entity != None:
+                TaskID = event_entity.get('id', None)
+                if TaskID != None:
+                    event_task_filters = [['id', 'is', TaskID]]
+                    event_task_fields = ["sg_parent_task", "entity", "project"]
+                    parent_status_out = None
 
-            event_task_dict = sg_find(sg, "Task", event_task_filters, event_task_fields)
-            #logger.info("Current event_task_dict %s" % (str(event_task_dict)))
-            if event_task_dict != None:
-                sg_parent_task = event_task_dict.get("sg_parent_task", None)
-                if sg_parent_task != None:
-                    logger.info("Current event_task_dict %s" % (str(event_task_dict)))
-                    logger.info("Current sg_parent_task %s" % (str(sg_parent_task)))
-                    parent_task_id = sg_parent_task.get("id", None)
-                    other_spawned_tasks_filter = [
-                        ["entity", "is", event_task_dict.get("entity", None)],
-                        ["project", "is", event_task_dict.get("project", None)]
-                    ]
-                    other_spawned_tasks_fields = ["sg_parent_task", "sg_status_list"]
-                    other_spawned_task_dict_list = sg.find("Task", other_spawned_tasks_filter, other_spawned_tasks_fields)
-                    #logger.info("Current other_spawned_task_dict %s" % (str(other_spawned_task_dict)))
-                    if other_spawned_task_dict_list != None:
-                        for task_dict in other_spawned_task_dict_list:
-                            sg_parent_task = task_dict.get("sg_parent_task", None)
-                            if sg_parent_task != None:
-                                child_task_status = task_dict.get("sg_status_list", None)
-                                child_task_status_list.append(child_task_status)
-                                #valid_spawned_task_dict_list.append(task_dict)
-                    logger.info("Current child_task_status_list %s" % (str(child_task_status_list)))
+                    event_task_dict = sg_find(sg, "Task", event_task_filters, event_task_fields)
+                    #logger.info("Current event_task_dict %s" % (str(event_task_dict)))
+                    if event_task_dict != None:
+                        sg_parent_task = event_task_dict.get("sg_parent_task", None)
+                        if sg_parent_task != None:
+                            logger.info("Current event_task_dict %s" % (str(event_task_dict)))
+                            logger.info("Current sg_parent_task %s" % (str(sg_parent_task)))
+                            parent_task_id = sg_parent_task.get("id", None)
+                            other_spawned_tasks_filter = [
+                                ["entity", "is", event_task_dict.get("entity", None)],
+                                ["project", "is", event_task_dict.get("project", None)]
+                            ]
+                            other_spawned_tasks_fields = ["sg_parent_task", "sg_status_list"]
+                            other_spawned_task_dict_list = sg.find("Task", other_spawned_tasks_filter, other_spawned_tasks_fields)
+                            #logger.info("Current other_spawned_task_dict %s" % (str(other_spawned_task_dict)))
+                            if other_spawned_task_dict_list != None:
+                                for task_dict in other_spawned_task_dict_list:
+                                    sg_parent_task = task_dict.get("sg_parent_task", None)
+                                    if sg_parent_task != None:
+                                        child_task_status = task_dict.get("sg_status_list", None)
+                                        child_task_status_list.append(child_task_status)
+                                        #valid_spawned_task_dict_list.append(task_dict)
+                            logger.info("Current child_task_status_list %s" % (str(child_task_status_list)))
 
-                    if "rev" in child_task_status_list:
-                        parent_status_out = "rev"
-                    elif "mn" in child_task_status_list:
-                        parent_status_out = "mn"
-                    elif "rnd" in child_task_status_list:
-                        parent_status_out = "rnd"
-                    elif "4k" in child_task_status_list:
-                        parent_status_out = "4k"
-                    elif "fdi" in child_task_status_list:
-                        parent_status_out = "fdi"
-                    else:
-                        parent_status_out = "ip"
+                            if "rev" in child_task_status_list:
+                                parent_status_out = "rev"
+                            elif "mn" in child_task_status_list:
+                                parent_status_out = "mn"
+                            elif "rnd" in child_task_status_list:
+                                parent_status_out = "rnd"
+                            elif "4k" in child_task_status_list:
+                                parent_status_out = "4k"
+                            elif "fdi" in child_task_status_list:
+                                parent_status_out = "fdi"
+                            else:
+                                parent_status_out = "ip"
 
-                    valid_fin_status_list = set(["fin", "omt"])
-                    if "fin" in child_task_status_list:
-                        if valid_fin_status_list >= set(child_task_status_list):
-                            parent_status_out = "fin"
-                        if all_same( child_task_status_list ) == True:
-                            parent_status_out = "fin"
-                    valid_fin_status_list = set(["if", "omt"])
-                    if "if" in child_task_status_list:
-                        if valid_fin_status_list >= set(child_task_status_list):
-                            parent_status_out = "if"
-                        if all_same( child_task_status_list ) == True:
-                            parent_status_out = "if"
-                    if "omt" in child_task_status_list:
-                        if all_same( child_task_status_list ) == True:
-                            parent_status_out = "omt"
+                            valid_fin_status_list = set(["fin", "omt"])
+                            if "fin" in child_task_status_list:
+                                if valid_fin_status_list >= set(child_task_status_list):
+                                    parent_status_out = "fin"
+                                if all_same( child_task_status_list ) == True:
+                                    parent_status_out = "fin"
+                            valid_fin_status_list = set(["if", "omt"])
+                            if "if" in child_task_status_list:
+                                if valid_fin_status_list >= set(child_task_status_list):
+                                    parent_status_out = "if"
+                                if all_same( child_task_status_list ) == True:
+                                    parent_status_out = "if"
+                            if "omt" in child_task_status_list:
+                                if all_same( child_task_status_list ) == True:
+                                    parent_status_out = "omt"
 
-                    if parent_status_out != None:
-                        sg.update ("Task", parent_task_id, {'sg_status_list':str(parent_status_out)})
+                            if parent_status_out != None:
+                                sg.update ("Task", parent_task_id, {'sg_status_list':str(parent_status_out)})
