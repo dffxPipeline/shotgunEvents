@@ -38,7 +38,7 @@ __version__ = '0.9'
 __version_info__ = (0, 9)
 
 for dir in rootSoftwareDir:
-    path_to_shotgun=[os.path.join(dir,'software\\python\\shotgun\\python-api-master')]
+    path_to_shotgun=[os.path.join(dir,'software\\python\\shotgun')]
     path_to_shotgun = getPath(path_to_shotgun)
     if path_to_shotgun != None:
         shotgunPathExists = path_to_shotgun
