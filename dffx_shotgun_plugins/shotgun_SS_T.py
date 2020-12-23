@@ -67,6 +67,10 @@ def changeStatus(sg,shotID,status):
             status_out = 'Shot is Pending Quality Check'
         if status == 'fdi':
             status_out = 'Shot is Pending DI'
+        if status == 'fdd':
+            status_out = 'Shot is Pending Director/Studio Approval'
+        if status == 'tfn':
+            status_out = 'Shot Needs Tech Fix'
         return ( "Shot ID %s: Status Updated to %s" % ( str(shotID),str(status_out) ) )
 
 def parseConfig():
@@ -212,6 +216,14 @@ def shotgun_SS_T(sg, logger, event, args):
 
                 elif 'fdi' == currentTaskStatus:
                     statusInfo = changeStatus(sg, shotID, 'fdi')
+                    logger.info("%s" % str(statusInfo))
+
+                elif 'fdd' == currentTaskStatus:
+                    statusInfo = changeStatus(sg, shotID, 'fdd')
+                    logger.info("%s" % str(statusInfo))
+
+                elif 'tfn' == currentTaskStatus:
+                    statusInfo = changeStatus(sg, shotID, 'tfn')
                     logger.info("%s" % str(statusInfo))
 
                 elif currentTaskStatus in ipStatusList:
