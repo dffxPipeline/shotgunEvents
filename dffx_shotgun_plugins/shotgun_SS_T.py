@@ -6,7 +6,7 @@ http://shotgunsoftware.github.com/shotgunEvents/api.html
 ## shotgun_logArgs: Logs all events that occur and generates a logfile in the specified directory found in the shotgun_logging.conf file ##
 """
 
-rootSoftwareDir = ['Z:\\Server\\Tools','S:\\']
+rootSoftwareDir = [r'\\intrepid\Server\Tools']
 dffxModulesExists = ''
 configFilePathExists = ''
 
@@ -150,13 +150,13 @@ def shotgun_SS_T(sg, logger, event, args):
 
         else:
             currentTaskID = event['entity']['id']
-            #logger.info("%s" % str(currentTaskID))
+            logger.info("%s" % str(currentTaskID))
             currentTaskFilters = [['id','is',currentTaskID]]
-            #logger.info("%s" % str(currentTaskFilters))
+            logger.info("%s" % str(currentTaskFilters))
             currentTaskFields = ['sg_status_list']
-            #logger.info("%s" % str(currentTaskFilters))
+            logger.info("%s" % str(currentTaskFilters))
             currentTaskStatus = sg_find(sg,'Task',currentTaskFilters,currentTaskFields)['sg_status_list']
-            #logger.info("%s" % str(currentTaskStatus))
+            logger.info("%s" % str(currentTaskStatus))
             shotStatusUpdateData,revCount,modCount,ipCount,pcrCount,hldCount,internalFinalCount,disregardCount = ( '' for i in range(8) )
             filters=[['id','is',currentTaskID]]
             fields=['entity']

@@ -24,7 +24,7 @@ http://shotgunsoftware.github.com/shotgunEvents
 """
 
 
-rootSoftwareDir = ['Z:\\Server\\Tools','S:\\',]
+rootSoftwareDir = [r'\\intrepid\Server\Tools']
 shotgunPathExists = ''
 
 import os
