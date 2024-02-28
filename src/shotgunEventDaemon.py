@@ -224,9 +224,11 @@ class Config(ConfigParser.ConfigParser):
 
     def getLogFile(self, filename=None):
         date=str(getDate())
+        computer_name = socket.gethostname()    
+
         if filename is None:
             if self.has_option('daemon', 'logFile'):
-                filename = (self.get('daemon', 'logFile') + '_' + date)
+                filename = (self.get('daemon', 'logFile') + '_' + date + '_' + '%s' % (computer_name))
             else:
                 raise ConfigError('The config file has no logFile option.')
 
@@ -359,7 +361,8 @@ class Engine(object):
         processing from there.
         """
         eventIdFile = self.config.getEventIdFile()
-
+        computer_name = socket.gethostname()    
+        eventIdFile = eventIdFile.replace("shotgunEventDaemon", "%s_shotgunEventDaemon" % (computer_name))
         if eventIdFile and os.path.exists(eventIdFile):
             try:
                 fh = open(eventIdFile)
@@ -500,7 +503,8 @@ class Engine(object):
         this location to know at which event it should start processing.
         """
         eventIdFile = self.config.getEventIdFile()
-
+        computer_name = socket.gethostname()    
+        eventIdFile = eventIdFile.replace("shotgunEventDaemon", "%s_shotgunEventDaemon" % (computer_name))
         if eventIdFile is not None:
             for collection in self._pluginCollections:
                 self._eventIdData[collection.path] = collection.getState()
@@ -636,12 +640,13 @@ class Plugin(object):
 
         # Setup the plugin's logger
         self.date=str(getDate())
+        computer_name = socket.gethostname()    
         self.logger = logging.getLogger(self.getName()+ '_' + self.date)
         self.logger.config = self._engine.config
         self._engine.setEmailsOnLogger(self.logger, True)
         self.logger.setLevel(self._engine.config.getLogLevel())
         if self._engine.config.getLogMode() == 1:
-            _setFilePathOnLogger(self.logger, self._engine.config.getLogFile('shotgunEventDaemon_Plugin'+'_'+self.getName()+'_'+ self.date))
+            _setFilePathOnLogger(self.logger, self._engine.config.getLogFile('shotgunEventDaemon_Plugin'+'_'+self.getName()+'_'+ self.date+'_'+computer_name))
 
     def getName(self):
         return self._pluginName
