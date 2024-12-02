@@ -131,7 +131,7 @@ def shotgun_TS_V(sg, logger, event, args):
             try:
                 if versionTaskID:
                     task_filters = [['id','is',versionTaskID]]
-                    task_fields = ['sg_parent_task']
+                    task_fields = ['sg_parent_task', 'step', 'entity']
                     sg_parent_task_dict = sg_find(sg,'Task',task_filters,task_fields)
                     if sg_parent_task_dict:
                         #logger.info("sg_parent_task %s\n" % (sg_parent_task_dict))
@@ -141,12 +141,29 @@ def shotgun_TS_V(sg, logger, event, args):
                         #logger.info("sg_parent_task_id %s\n" % (sg_parent_task_id))
                         sg_parent_task_name = task_dict.get("name", None)
                         #logger.info("sg_parent_task_name %s\n" % (sg_parent_task_name))
+                        step_dict = sg_parent_task_dict.get("step", None)
+                        logger.info("step_dict %s\n" % (step_dict))
+                        entity_dict = sg_parent_task_dict.get("entity", None)
+                        logger.info("entity_dict %s\n" % (entity_dict))
+                        if step_dict and entity_dict:
+                            step_name = step_dict.get("name", None)
+                            step_task_filters = [['entity','is',entity_dict], ['content','is',step_name]]
+                            step_task_fields = ['content', 'id', 'entity']
+                            sg_step_task_dict = sg_find(sg,'Task',step_task_filters,step_task_fields)
+                            logger.info("sg_step_task_dict %s\n" % (sg_step_task_dict))
+                            if sg_step_task_dict:
+                                step_task_name = sg_step_task_dict.get("content", None)
+                                if sg_parent_task_name and step_task_name:
+                                    step_task_id = sg_step_task_dict.get("id", None)
+                                    if step_task_name != sg_parent_task_name:
+                                        step_task_update = sg.update ("Task",step_task_id,TaskStatusUpdateData)
+
                         if sg_parent_task_id:
                             sg_parent_task_update = {'sg_status_list': 'omt'}
                             parent_task_update = sg.update ("Task",sg_parent_task_id,sg_parent_task_update)
                             logger.info("Updated sg_parent_task %s, id: %s, to Omitted\n" % (sg_parent_task_name, sg_parent_task_id))
             except Exception as error:
-                logger.info("Can't Update Task Status For %s ERROR: %s\n" % (str(sg_parent_task_id),str(error)))
+                logger.info("Can't Update Task Status For %s ERROR: %s\n" % (str(versionTaskID),str(error)))
             try:
                 versionSummary = []
                 versionID = event['entity']['id']
