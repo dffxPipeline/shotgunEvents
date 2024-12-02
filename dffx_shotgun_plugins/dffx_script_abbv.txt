@@ -1,5 +1,6 @@
 TS = task status
 SS = shot status
+AS = asset status
 DSD = downstream dependency
 T = task
 V = version

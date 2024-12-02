@@ -123,10 +123,30 @@ def shotgun_TS_V(sg, logger, event, args):
                     fields = ['sg_task']
                     versionTaskID = sg_find(sg,'Version',filters,fields)['sg_task'].get('id')
                     TaskStatusUpdateData = {'sg_status_list':TaskStatusUpdate}
+                    #logger.info("TaskStatusUpdateData %s\n" % (TaskStatusUpdateData))
                     taskUpdate = sg.update ("Task",versionTaskID,TaskStatusUpdateData)
                     logger.info("Task Status Updated To %s for Task ID %s Based on Version ID %s" % (str(TaskStatusUpdate),str(versionTaskID),str(versionID)))
             except Exception as error:
                 logger.info("Can't Update Task Status For %s Task ID: %s " % (str(versionTaskID),str(error)))
+            try:
+                if versionTaskID:
+                    task_filters = [['id','is',versionTaskID]]
+                    task_fields = ['sg_parent_task']
+                    sg_parent_task_dict = sg_find(sg,'Task',task_filters,task_fields)
+                    if sg_parent_task_dict:
+                        #logger.info("sg_parent_task %s\n" % (sg_parent_task_dict))
+                        task_dict = sg_parent_task_dict.get("sg_parent_task", None)
+                        #logger.info("task_dict %s\n" % (task_dict))
+                        sg_parent_task_id = task_dict.get("id", None)
+                        #logger.info("sg_parent_task_id %s\n" % (sg_parent_task_id))
+                        sg_parent_task_name = task_dict.get("name", None)
+                        #logger.info("sg_parent_task_name %s\n" % (sg_parent_task_name))
+                        if sg_parent_task_id:
+                            sg_parent_task_update = {'sg_status_list': 'omt'}
+                            parent_task_update = sg.update ("Task",sg_parent_task_id,sg_parent_task_update)
+                            logger.info("Updated sg_parent_task %s, id: %s, to Omitted\n" % (sg_parent_task_name, sg_parent_task_id))
+            except Exception as error:
+                logger.info("Can't Update Task Status For %s ERROR: %s\n" % (str(sg_parent_task_id),str(error)))
             try:
                 versionSummary = []
                 versionID = event['entity']['id']
